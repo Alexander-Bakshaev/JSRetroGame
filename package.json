@@ -10,7 +10,7 @@
     "test": "jest",
     "coverage": "jest --coverage"
   },
-  "author": "axer.medium",
+  "author": "Alex",
   "license": "MIT",
   "devDependencies": {
     "@babel/cli": "^7.23.4",
