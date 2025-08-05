@@ -12,14 +12,23 @@ export default function aiTurn(positionedCharacter, obj) {
     const { gamePlay } = obj;
     const gameController = obj;
 
+    console.log('Starting AI turn for character at position:', positionedCharacter.position);
+    
     const enemyActiveCharacter = setActiveCharacter(
         positionedCharacter,
         gamePlay.boardSize,
     );
+    console.log('Enemy active character:', enemyActiveCharacter);
 
     const opponentCharacter = gameController.userPositionedCharacters
-        .filter((character) => enemyActiveCharacter.attack.includes(character.position))
+        .filter((character) => {
+            const isInRange = enemyActiveCharacter.attack.includes(character.position);
+            console.log(`Checking character at ${character.position}: in attack range?`, isInRange);
+            return isInRange;
+        })
         .sort((a, b) => a.character.health - b.character.health)[0];
+        
+    console.log('Selected opponent character:', opponentCharacter);
 
     if (opponentCharacter) {
         const damage = Math.floor(

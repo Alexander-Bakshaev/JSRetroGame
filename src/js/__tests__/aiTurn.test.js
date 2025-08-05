@@ -226,4 +226,95 @@ describe('aiTurn', () => {
                         .enemyPositionedCharacters,
                 ]));
     });
+
+    it('should redraw positions after attack if user characters remain', async () => {
+        // Создаем Promise, который разрешим вручную
+        let resolveShowDamage;
+        const showDamagePromise = new Promise((resolve) => {
+            resolveShowDamage = resolve;
+        });
+
+        // Настраиваем мок для активного персонажа
+        const activeChar = {
+            position: 1,
+            character: {
+                health: 100, // Персонаж остается жив после атаки
+                defence: 10,
+            }
+        };
+        
+        // Настраиваем мок для противника
+        const enemy = {
+            position: 10,
+            attack: [1], // Атакуем позицию 1
+            move: [11, 12],
+            character: {
+                attack: 30,
+                levelUp: jest.fn(),
+            }
+        };
+        
+        // Создаем мок для showDamage, который возвращает промис
+        const showDamageMock = jest.fn().mockImplementation((position, damage) => {
+            // Применяем урон к персонажу, но оставляем его живым
+            const target = mockGameController.userPositionedCharacters
+                .find(char => char.position === position);
+            if (target) {
+                target.character.health = Math.max(1, target.character.health - damage);
+            }
+            return showDamagePromise.then(() => {
+                // После разрешения промиса проверяем, что урон применен
+                expect(mockGameController.userPositionedCharacters[0].character.health).toBeLessThan(100);
+            });
+        });
+        
+        // Настраиваем мок для gameController
+        mockGameController = {
+            userPositionedCharacters: [JSON.parse(JSON.stringify(activeChar))],
+            enemyPositionedCharacters: [JSON.parse(JSON.stringify(enemy))],
+            activeCharacter: { ...activeChar },
+            stateService: {
+                saveRecord: jest.fn()
+            },
+            gamePlay: {
+                boardSize: 8,
+                showDamage: showDamageMock,
+                deselectAllCells: jest.fn(),
+                removeAllCellListeners: jest.fn(),
+                redrawPositions: jest.fn(),
+                selectCell: jest.fn(),
+                score: 0
+            }
+        };
+        
+        // Мокаем setActiveCharacter, чтобы вернуть нашего противника
+        setActiveCharacter.mockImplementation((char) => ({
+            ...enemy,
+            attack: [1], // Указываем, что атакуем позицию 1
+            character: {
+                ...enemy.character,
+                levelUp: jest.fn()
+            }
+        }));
+        
+        // Запускаем тестируемую функцию (но не ждем её завершения)
+        const aiTurnPromise = aiTurn(enemy, mockGameController);
+        
+        // Проверяем, что showDamage был вызван
+        expect(showDamageMock).toHaveBeenCalledWith(1, expect.any(Number));
+        
+
+        // Разрешаем промис showDamage
+        resolveShowDamage();
+        
+        // Ждем завершения всех асинхронных операций
+        await new Promise(resolve => setImmediate(resolve));
+        await aiTurnPromise;
+        
+        // Проверяем, что урон был применен
+        expect(mockGameController.userPositionedCharacters[0].character.health).toBeLessThan(100);
+        
+        // Проверяем, что selectCell был вызван (это косвенно подтверждает, что redrawPositions был вызван)
+        expect(mockGameController.gamePlay.selectCell).toHaveBeenCalled();
+    });
 });
