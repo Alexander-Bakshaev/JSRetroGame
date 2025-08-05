@@ -107,20 +107,6 @@ npm run lint
 npm run build
 ```
 
-## 🔄 Разработка
-
-1. Создайте ветку для новой фичи:
-```bash
-git checkout -b feature/new-feature
-```
-
-2. После завершения работы:
-```bash
-git add .
-git commit -m "feat: добавил новую фичу"
-git push origin feature/new-feature
-```
-
 ## 📝 Лицензия
 MIT
 
